@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BlockDAG — Parallel Proof-of-Work</title>
+<meta name="description" content="Unofficial concept site for BlockDAG, a Layer-1 that pairs Proof-of-Work with a directed acyclic graph." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@360;480;600;720&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #060910;
+    --bg-2: #0c1220;
+    --card: rgba(16, 24, 40, 0.72);
+    --line: rgba(140, 180, 255, 0.14);
+    --text: #eef3ff;
+    --muted: #93a0bb;
+    --blue: #4c8dff;
+    --cyan: #3ee0ff;
+    --amber: #ffb020;
+    --green: #3ee0a2;
+    --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: Outfit, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+  }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; }
+
+  .notice {
+    background: linear-gradient(90deg, #12305f, #0d3a4a);
+    color: #d7e8ff;
+    text-align: center;
+    font-size: 13px;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .notice strong { color: #fff; }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    backdrop-filter: blur(16px);
+    background: rgba(6, 9, 16, 0.78);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav {
+    max-width: 1160px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 22px;
+    gap: 18px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 720;
+    letter-spacing: -0.03em;
+    font-size: 18px;
+  }
+  .brand svg { display: block; }
+  .links {
+    display: flex;
+    gap: 22px;
+    color: var(--muted);
+    font-size: 14.5px;
+  }
+  .links a:hover { color: var(--text); }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    cursor: pointer;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-weight: 600;
+    font-family: inherit;
+    font-size: 14.5px;
+  }
+  .btn-primary {
+    background: linear-gradient(180deg, #5b9bff, #2f6ef0);
+    color: white;
+    box-shadow: 0 8px 24px rgba(47, 110, 240, 0.35);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--line);
+  }
+  .btn:hover { transform: translateY(-1px); }
+
+  .hero {
+    position: relative;
+    overflow: hidden;
+    min-height: 88vh;
+    display: grid;
+    align-items: center;
+  }
+  canvas#dag {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.85;
+  }
+  .hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 72px 22px 48px;
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--cyan);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+  }
+  h1 {
+    font-size: clamp(40px, 6vw, 72px);
+    line-height: 0.96;
+    letter-spacing: -0.045em;
+    margin: 0 0 18px;
+    font-weight: 720;
+  }
+  h1 span {
+    background: linear-gradient(90deg, #fff, #8ec4ff 55%, #3ee0ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .lede {
+    color: var(--muted);
+    font-size: 18px;
+    max-width: 540px;
+    margin-bottom: 26px;
+  }
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero-card {
+    background: linear-gradient(180deg, rgba(18,28,48,0.9), rgba(10,16,30,0.86));
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+  }
+  .hero-card h3 { margin: 0 0 6px; font-size: 16px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+  }
+  .stat b { display: block; font-size: 18px; letter-spacing: -0.03em; }
+  .stat span { color: var(--muted); font-size: 12px; }
+  .bar {
+    margin-top: 16px;
+    height: 8px;
+    border-radius: 99px;
+    background: #182236;
+    overflow: hidden;
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    width: 72%;
+    background: linear-gradient(90deg, #2f6ef0, #3ee0ff);
+  }
+  .bar-label {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 8px;
+    font-family: "IBM Plex Mono", monospace;
+  }
+
+  section { padding: 78px 22px; }
+  .wrap { max-width: 1160px; margin: 0 auto; }
+  .eyebrow {
+    color: var(--cyan);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  h2 {
+    font-size: clamp(30px, 4vw, 46px);
+    letter-spacing: -0.04em;
+    margin: 8px 0 12px;
+    line-height: 1.05;
+  }
+  .section-lead { color: var(--muted); max-width: 640px; margin-bottom: 28px; }
+
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 22px;
+  }
+  .panel h3 { margin-top: 0; letter-spacing: -0.03em; }
+  .chain, .graph {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 18px 0;
+    min-height: 92px;
+  }
+  .block {
+    width: 46px; height: 46px; border-radius: 10px;
+    background: #1a2740;
+    border: 1px solid #35507a;
+    display: grid; place-items: center;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: #b9d4ff;
+  }
+  .arrow { color: #4d6488; }
+  .graph { flex-wrap: wrap; position: relative; }
+  .graph .block { background: #10263a; border-color: #2aa7c9; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 13px;
+    color: #c9d7ee;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 10px;
+  }
+
+  .grid-3, .grid-4 {
+    display: grid;
+    gap: 14px;
+  }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .card {
+    background: linear-gradient(180deg, rgba(18,27,46,0.85), rgba(10,15,26,0.85));
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 20px;
+  }
+  .icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: grid; place-items: center;
+    background: rgba(62, 224, 255, 0.1);
+    border: 1px solid rgba(62, 224, 255, 0.2);
+    margin-bottom: 12px;
+    color: var(--cyan);
+    font-size: 18px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 18px; letter-spacing: -0.03em; }
+  .card p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  .miners { display: grid; grid-template-columns: 1.1fr 0.9fr 0.9fr; gap: 14px; }
+  .miner {
+    border-radius: 20px;
+    padding: 22px;
+    border: 1px solid var(--line);
+    background: #0d1524;
+    position: relative;
+    overflow: hidden;
+  }
+  .miner.featured {
+    background: linear-gradient(180deg, #12305a, #0c182c);
+    border-color: rgba(76, 141, 255, 0.45);
+  }
+  .tag {
+    position: absolute;
+    top: 16px; right: 16px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(62, 224, 255, 0.15);
+    color: var(--cyan);
+    border-radius: 999px;
+    padding: 4px 8px;
+  }
+  .price { font-size: 28px; letter-spacing: -0.04em; margin: 8px 0; }
+  .muted { color: var(--muted); }
+
+  .token-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 28px;
+    align-items: center;
+  }
+  .donut-wrap { display: grid; place-items: center; }
+  .legend { display: grid; gap: 10px; }
+  .legend div {
+    display: grid;
+    grid-template-columns: 12px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+  .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .step {
+    border-left: 2px solid #2a4d86;
+    padding: 4px 0 4px 14px;
+  }
+  .step b { display: block; }
+  .step span { color: var(--muted); font-size: 13.5px; }
+
+  details {
+    border-bottom: 1px solid var(--line);
+    padding: 14px 0;
+  }
+  summary { cursor: pointer; font-weight: 600; }
+  details p { color: var(--muted); }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 28px 22px 40px;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  .foot {
+    max-width: 1160px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 900px) {
+    .links { display: none; }
+    .hero-inner, .compare, .grid-3, .grid-4, .miners, .token-layout, .timeline {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="notice">
+    <strong>Unofficial concept demo.</strong>
+    Not affiliated with BlockDAG. The “Official site” link leaves this page and opens blockdag.network. This demo has no wallet connect, no checkout, and no payments.
+  </div>
+  <header>
+    <div class="nav">
+      <a class="brand" href="#top">
+        <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#7ec8ff"/>
+              <stop offset="1" stop-color="#2f6ef0"/>
+            </linearGradient>
+          </defs>
+          <path d="M16 2 L28 9 V23 L16 30 L4 23 V9 Z" fill="none" stroke="url(#g)" stroke-width="1.6"/>
+          <path d="M16 8 L23 12 V20 L16 24 L9 20 V12 Z" fill="url(#g)" opacity="0.9"/>
+        </svg>
+        BlockDAG
+      </a>
+      <nav class="links">
+        <a href="#tech">Technology</a>
+        <a href="#mining">Mining</a>
+        <a href="#token">BDAG</a>
+        <a href="#eco">Ecosystem</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <span class="official">
+        <a class="btn btn-primary" href="https://blockdag.network/" target="_blank" rel="noopener" title="This link leaves this demo and opens the BlockDAG site">Official site</a>
+        <button class="btn btn-ghost" type="button" id="copy-link">Copy link</button>
+      </span>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <canvas id="dag"></canvas>
+      <div class="hero-inner">
+        <div>
+          <div class="kicker"><span class="dot"></span> Layer-1 · Proof-of-Work · DAG</div>
+          <h1>Bitcoin security.<br><span>Blocks in parallel.</span></h1>
+          <p class="lede">BlockDAG is a Layer-1 network that keeps Proof-of-Work and lets many blocks exist at once in a directed acyclic graph, instead of forcing every miner onto a single chain tip.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#tech">How the graph works</a>
+            <a class="btn btn-ghost" href="#mining">Mining paths</a>
+          </div>
+        </div>
+        <aside class="hero-card">
+          <h3>Network snapshot</h3>
+          <p class="sub">Illustrative figures for this demo. Live numbers belong on the project’s own explorer.</p>
+          <div class="stat-grid">
+            <div class="stat"><b>PoW + DAG</b><span>Consensus shape</span></div>
+            <div class="stat"><b>EVM</b><span>Smart-contract target</span></div>
+            <div class="stat"><b>BDAG</b><span>Native coin</span></div>
+            <div class="stat"><b>Parallel</b><span>Block production</span></div>
+          </div>
+          <div class="bar" aria-hidden="true"><i></i></div>
+          <div class="bar-label"><span>Demo graph load</span><span>not a live metric</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="tech">
+      <div class="wrap">
+        <div class="eyebrow">Technology</div>
+        <h2>A chain picks one tip. A block-DAG keeps the neighbors.</h2>
+        <p class="section-lead">On a linear chain, two blocks found at the same moment compete and one is orphaned. A block-DAG references multiple parents, so parallel work can stay in the ledger. Ordering still has to be decided by the protocol.</p>
+        <div class="compare">
+          <article class="panel">
+            <h3>Linear chain</h3>
+            <div class="chain">
+              <div class="block">01</div><span class="arrow">→</span>
+              <div class="block">02</div><span class="arrow">→</span>
+              <div class="block">03</div><span class="arrow">→</span>
+              <div class="block">04</div>
+            </div>
+            <div class="chips">
+              <span class="chip">One canonical tip</span>
+              <span class="chip">Competing blocks dropped</span>
+              <span class="chip">Simple history</span>
+            </div>
+          </article>
+          <article class="panel">
+            <h3>Block-DAG</h3>
+            <div class="graph">
+              <div class="block">A</div>
+              <div class="block">B</div>
+              <div class="block">C</div>
+              <div class="block">D</div>
+              <div class="block">E</div>
+              <div class="block">F</div>
+            </div>
+            <div class="chips">
+              <span class="chip">Multiple parents</span>
+              <span class="chip">Parallel block production</span>
+              <span class="chip">Protocol sets the order</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="eyebrow">Core attributes</div>
+        <h2>What the design is trying to hold at once.</h2>
+        <div class="grid-3" style="margin-top: 22px;">
+          <article class="card">
+            <div class="icon">⚡</div>
+            <h3>Throughput</h3>
+            <p>More blocks can be produced in the same window because miners are not all racing for a single tip. Confirmation still depends on how the graph is ordered.</p>
+          </article>
+          <article class="card">
+            <div class="icon">⬡</div>
+            <h3>Proof-of-Work</h3>
+            <p>Security is meant to come from open mining, in the Bitcoin tradition, rather than a small validator set. Hardware and hashpower still concentrate in practice.</p>
+          </article>
+          <article class="card">
+            <div class="icon">{ }</div>
+            <h3>EVM target</h3>
+            <p>The project describes Solidity-compatible contracts so Ethereum-style apps can be ported. Compatibility is a claim to verify on the live network, not a slogan.</p>
+          </article>
+          <article class="card">
+            <div class="icon">▣</div>
+            <h3>Native coin</h3>
+            <p>BDAG is positioned as gas, mining reward, and the asset used across wallets, staking, and apps in the ecosystem.</p>
+          </article>
+          <article class="card">
+            <div class="icon">↗</div>
+            <h3>Mining access</h3>
+            <p>Public materials describe a phone miner plus ASIC-style rigs (X10, X30, X100). Advertised daily coin rates are project marketing, not guaranteed yield.</p>
+          </article>
+          <article class="card">
+            <div class="icon">◈</div>
+            <h3>Apps on top</h3>
+            <p>Intended surface area includes payments, DeFi, NFTs, gaming, and a consumer “super app.” Utility depends on what actually ships and gets used.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="mining">
+      <div class="wrap">
+        <div class="eyebrow">Mining</div>
+        <h2>From a phone app to a rack.</h2>
+        <p class="section-lead">Rates below are the project’s own published marketing figures for BDAG per day. They are not a promise of profit, and difficulty changes reward.</p>
+        <div class="miners">
+          <article class="miner featured">
+            <span class="tag">Starter</span>
+            <h3>X10</h3>
+            <p class="muted">Entry hardware. Project-stated rate up to 200 BDAG / day.</p>
+            <div class="price">Up to 200</div>
+            <p class="muted">Compact rig for people who want a dedicated miner without a warehouse.</p>
+          </article>
+          <article class="miner">
+            <h3>X30</h3>
+            <p class="muted">Mid tier. Project-stated rate up to 600 BDAG / day.</p>
+            <div class="price">Up to 600</div>
+            <p class="muted">More hash, more power draw, still aimed at a normal room.</p>
+          </article>
+          <article class="miner">
+            <h3>X100</h3>
+            <p class="muted">High output. Project-stated rate up to 2,000 BDAG / day.</p>
+            <div class="price">Up to 2,000</div>
+            <p class="muted">Positioned for larger operations. Check power cost before believing the headline.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="token">
+      <div class="wrap">
+        <div class="eyebrow">BDAG</div>
+        <h2>Supply stories do not match. Read the source.</h2>
+        <p class="section-lead">BlockDAG pages have published more than one supply figure (including 50 billion and 150 billion). This chart uses the 150 billion split that appears in several project explainers. Treat it as a published allocation sketch, not audited circulating supply.</p>
+        <div class="token-layout">
+          <div class="donut-wrap">
+            <svg width="240" height="240" viewBox="0 0 42 42" aria-label="Allocation sketch">
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#182236" stroke-width="6"/>
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#4c8dff" stroke-width="6" stroke-dasharray="33.3 66.7" stroke-dashoffset="25"/>
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#3ee0ff" stroke-width="6" stroke-dasharray="33.3 66.7" stroke-dashoffset="58.3"/>
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#ffb020" stroke-width="6" stroke-dasharray="16.7 83.3" stroke-dashoffset="25"/>
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#3ee0a2" stroke-width="6" stroke-dasharray="16.7 83.3" stroke-dashoffset="8.3"/>
+              <text x="21" y="20" text-anchor="middle" fill="#eef3ff" font-size="4" font-family="Outfit">150B</text>
+              <text x="21" y="25" text-anchor="middle" fill="#93a0bb" font-size="2.4" font-family="Outfit">max sketch</text>
+            </svg>
+          </div>
+          <div class="legend">
+            <div><i class="swatch" style="background:#4c8dff"></i><span>Existing holders / earlier allocation</span><b>50B · 33%</b></div>
+            <div><i class="swatch" style="background:#3ee0ff"></i><span>Mining rewards</span><b>50B · 33%</b></div>
+            <div><i class="swatch" style="background:#ffb020"></i><span>Presale</span><b>25B · 17%</b></div>
+            <div><i class="swatch" style="background:#3ee0a2"></i><span>Ecosystem</span><b>25B · 17%</b></div>
+            <p class="muted">Other project pages split community, liquidity, and team differently, sometimes against a 50 billion cap. If you are allocating money, use the current official tokenomics page and the contract you can verify.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="eco">
+      <div class="wrap">
+        <div class="eyebrow">Ecosystem</div>
+        <h2>What a full stack would include.</h2>
+        <div class="grid-4">
+          <article class="card"><h3>Wallet</h3><p>Hold BDAG, pay gas, and sign contract calls.</p></article>
+          <article class="card"><h3>Explorer</h3><p>Blocks, parents in the graph, and account history.</p></article>
+          <article class="card"><h3>Staking</h3><p>Lock coins for network participation where the contracts are live.</p></article>
+          <article class="card"><h3>Miner app</h3><p>Phone-side mining pitched as the on-ramp before hardware.</p></article>
+          <article class="card"><h3>dApps</h3><p>DeFi, NFTs, and games if developers actually deploy.</p></article>
+          <article class="card"><h3>Swaps</h3><p>In-ecosystem exchange once liquidity exists.</p></article>
+          <article class="card"><h3>Grants</h3><p>A builder program is part of the public pitch.</p></article>
+          <article class="card"><h3>Listings</h3><p>Exchange availability is separate from mainnet existing.</p></article>
+        </div>
+        <div class="timeline" style="margin-top: 28px;">
+          <div class="step"><b>Graph</b><span>Blocks reference more than one parent.</span></div>
+          <div class="step"><b>Order</b><span>Protocol picks a sequence for apps and balances.</span></div>
+          <div class="step"><b>Contracts</b><span>EVM tooling is the stated developer path.</span></div>
+          <div class="step"><b>Usage</b><span>Fees and mining only matter if people transact.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="wrap">
+        <div class="eyebrow">FAQ</div>
+        <h2>Straight answers.</h2>
+        <details open>
+          <summary>Is this the real BlockDAG website?</summary>
+          <p>No. This is a concept page built to explain the idea. The project’s public site is blockdag.network. Presale, claim, and “connect wallet” clones are a common drainer pattern — do not use this file for that.</p>
+        </details>
+        <details>
+          <summary>How is a block-DAG different from Bitcoin?</summary>
+          <p>Bitcoin extends one chain. A block-DAG allows several blocks to be created and referenced together. That can raise throughput, but the protocol still has to decide order and finality. Kaspa is the usual comparison for this design.</p>
+        </details>
+        <details>
+          <summary>Does parallel mining remove risk?</summary>
+          <p>No. Smart-contract bugs, custody, exchange liquidity, mining difficulty, and project execution risk all remain. A faster graph is not a return.</p>
+        </details>
+        <details>
+          <summary>Where should real purchases happen?</summary>
+          <p>Only through channels you verify yourself on the official domain. This demo collects nothing.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="foot">
+      <div>BlockDAG concept demo · not an offer to sell BDAG · not financial advice</div>
+      <div>Official site link goes to blockdag.network and leaves this demo.</div>
+    </div>
+  </footer>
+<script>
+const canvas = document.getElementById("dag");
+const ctx = canvas.getContext("2d");
+let nodes = [];
+function resize() {
+  canvas.width = canvas.offsetWidth * devicePixelRatio;
+  canvas.height = canvas.offsetHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  nodes = Array.from({length: 42}, (_, i) => ({
+    x: Math.random() * w,
+    y: Math.random() * h,
+    vx: (Math.random() - 0.5) * 0.35,
+    vy: (Math.random() - 0.5) * 0.35,
+    r: 2 + Math.random() * 2.4
+  }));
+}
+function tick() {
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  ctx.clearRect(0, 0, w, h);
+  for (const n of nodes) {
+    n.x += n.vx; n.y += n.vy;
+    if (n.x < 0 || n.x > w) n.vx *= -1;
+    if (n.y < 0 || n.y > h) n.vy *= -1;
+  }
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 150) {
+        ctx.strokeStyle = `rgba(90, 170, 255, ${0.18 * (1 - d / 150)})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+  }
+  for (const n of nodes) {
+    ctx.fillStyle = "#9fd4ff";
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  requestAnimationFrame(tick);
+}
+resize();
+addEventListener("resize", resize);
+tick();
+</script>
+</body>
+</html>
